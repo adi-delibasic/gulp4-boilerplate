@@ -7,12 +7,14 @@ const rename = require("gulp-rename");
 const postcss = require("gulp-postcss");
 const autoprefixer = require("autoprefixer");
 const cssnano = require("cssnano");
+const browsersync = require("browser-sync").create();
 const { src, series, parallel, dest, watch } = require("gulp");
 
 //Source
 
 jsPath = "src/assets/js/**/*.js";
 scssPath = "src/assets/scss/**/*.scss";
+htmlPath = "./*.html";
 
 //Scss
 function style() {
@@ -20,10 +22,12 @@ function style() {
     .src(scssPath)
     .pipe(sourcemaps.init())
     .pipe(sass())
-    .pipe(rename("style.min.css"))
+    .on("error", sass.logError)
+    .pipe(concat("style.min.css"))
     .pipe(postcss([autoprefixer(), cssnano()]))
     .pipe(sourcemaps.write("."))
-    .pipe(dest("dist/assets/css"));
+    .pipe(dest("dist/assets/css"))
+    .pipe(browsersync.stream());
 }
 
 // JS
@@ -35,13 +39,22 @@ function jsTask() {
     .pipe(dest("dist/assets/js"))
     .pipe(sourcemaps.write("."));
 }
-
-function watchTask() {
-  watch([scssPath, jsPath], { interval: 1000 }, parallel(style, jsTask));
-}
 // HTML
 function copyHtml() {
-  return src("./src/*.html").pipe(gulp.dest("dist"));
+  return src("*.html").pipe(gulp.dest("dist"));
+}
+
+function reload(done) {
+  browsersync.reload();
+  done();
+}
+
+function watchTask() {
+  browsersync.init({
+    server: "./",
+  });
+  watch([scssPath, jsPath, htmlPath], series(style, jsTask, copyHtml));
+  watch("./*.html", reload);
 }
 
 exports.style = style;
