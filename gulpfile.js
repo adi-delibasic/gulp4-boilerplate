@@ -55,6 +55,7 @@ function watchTask() {
   });
   watch([scssPath, jsPath, htmlPath], series(style, jsTask, copyHtml));
   watch("./*.html", reload);
+  watch("src/assets/js/**/*.js", reload);
 }
 
 exports.style = style;
